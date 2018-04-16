@@ -70,7 +70,7 @@ int main()
         return Unwrap(classValue.Ptr());
        };
 
-    jni::Class<Test> testClass { jni::Class<Test>::Find(env) };
+    jni::Class<Test> testClass = jni::Class<Test>::Find(env).release();
     assert(classValue == testClass);
 
     static bool calledNewGlobalRef = false;
@@ -247,7 +247,7 @@ int main()
     auto objectStaticField  = testClass.GetStaticField<jni::Object<Test>>(env, objectFieldName);
 
     assert(testClass.Get(env, booleanStaticField) == jni::jni_true);
-    assert(testClass.Get(env, objectStaticField).Get() == object.Get());
+    assert(testClass.Get(env, objectStaticField)->Get() == object.Get());
     testClass.Set(env, booleanStaticField, jni::jni_false);
     testClass.Set(env, objectStaticField, object);
 
@@ -309,8 +309,8 @@ int main()
     auto stringField  = testClass.GetField<jni::String>(env, stringFieldName);
 
     assert(object.Get(env, booleanField) == true);
-    assert(object.Get(env, objectField).Get() == object.Get());
-    assert(object.Get(env, stringField).Get() == string.Get());
+    assert(object.Get(env, objectField)->Get() == object.Get());
+    assert(object.Get(env, stringField)->Get() == string.Get());
 
     object.Set(env, booleanField, jni::jni_false);
     object.Set(env, objectField, object);
@@ -476,9 +476,9 @@ int main()
     auto objectBooleanStaticMethod = testClass.GetStaticMethod<jni::Object<Test> (jni::jboolean)>(env, objectMethodName);
     auto objectObjectStaticMethod  = testClass.GetStaticMethod<jni::Object<Test> (jni::Object<Test>)>(env, objectMethodName);
 
-    assert(testClass.Call(env, objectVoidStaticMethod).Get() == object.Get());
-    assert(testClass.Call(env, objectBooleanStaticMethod, jni::jni_true).Get() == object.Get());
-    assert(testClass.Call(env, objectObjectStaticMethod, object).Get() == object.Get());
+    assert(testClass.Call(env, objectVoidStaticMethod)->Get() == object.Get());
+    assert(testClass.Call(env, objectBooleanStaticMethod, jni::jni_true)->Get() == object.Get());
+    assert(testClass.Call(env, objectObjectStaticMethod, object)->Get() == object.Get());
 
 
     /// Method
@@ -576,9 +576,9 @@ int main()
     auto objectBooleanMethod = testClass.GetMethod<jni::Object<Test> (jni::jboolean)>(env, objectMethodName);
     auto objectObjectMethod  = testClass.GetMethod<jni::Object<Test> (jni::Object<Test>)>(env, objectMethodName);
 
-    assert(object.Call(env, objectVoidMethod).Get() == object.Get());
-    assert(object.Call(env, objectBooleanMethod, jni::jni_true).Get() == object.Get());
-    assert(object.Call(env, objectObjectMethod, object).Get() == object.Get());
+    assert(object.Call(env, objectVoidMethod)->Get() == object.Get());
+    assert(object.Call(env, objectBooleanMethod, jni::jni_true)->Get() == object.Get());
+    assert(object.Call(env, objectObjectMethod, object)->Get() == object.Get());
 
 
     /// Primitive Array
@@ -635,7 +635,7 @@ int main()
 
     jni::Array<jni::Object<Test>> objectArray { objectArrayValue.Ptr() };
     assert(objectArray.Length(env) == 42);
-    assert(objectArray.Get(env, 0).Get() == object.Get());
+    assert(objectArray.Get(env, 0)->Get() == object.Get());
 
 
     /// NativeMethod
@@ -735,8 +735,8 @@ int main()
         std::u16string(u"hello").copy(jni::Wrap<char16_t*>(buf), jni::Wrap<std::size_t>(len));
        };
 
-    assert(jni::Make<std::string>(env, jni::Make<jni::String>(env, "hello")) == "hello");
-    assert(jni::Make<std::u16string>(env, jni::Make<jni::String>(env, u"hello")) == u"hello");
+    assert(jni::Make<std::string>(env, *jni::Make<jni::String>(env, "hello")) == "hello");
+    assert(jni::Make<std::u16string>(env, *jni::Make<jni::String>(env, u"hello")) == u"hello");
 
 
     env.fns->NewBooleanArray = [] (JNIEnv*, jsize) -> jbooleanArray
@@ -767,7 +767,7 @@ int main()
        };
 
     std::vector<jboolean> vec = { jni::jni_true };
-    assert(jni::Make<std::vector<jboolean>>(env, jni::Make<jni::Array<jni::jboolean>>(env, vec)) == vec);
+    assert(jni::Make<std::vector<jboolean>>(env, *jni::Make<jni::Array<jni::jboolean>>(env, vec)) == vec);
 
 
     env.fns->NewByteArray = [] (JNIEnv*, jsize) -> jbyteArray
@@ -798,9 +798,9 @@ int main()
        };
 
     std::vector<jbyte> byte_vec = { 's' };
-    assert(jni::Make<std::vector<jbyte>>(env, jni::Make<jni::Array<jni::jbyte>>(env, byte_vec)) == byte_vec);
+    assert(jni::Make<std::vector<jbyte>>(env, *jni::Make<jni::Array<jni::jbyte>>(env, byte_vec)) == byte_vec);
     std::string str("s");
-    assert(jni::Make<std::string>(env, jni::Make<jni::Array<jni::jbyte>>(env, str)) == str);
+    assert(jni::Make<std::string>(env, *jni::Make<jni::Array<jni::jbyte>>(env, str)) == str);
 
 
     jni::MakeNativeMethod<decltype(&Method), &Method>("name");

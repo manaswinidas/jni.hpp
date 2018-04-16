@@ -64,9 +64,9 @@ namespace jni
 
             template < class T >
             auto Get(JNIEnv& env, const StaticField<TagType, T>& field) const
-               -> std::enable_if_t< !IsPrimitive<T>::value, T >
+               -> std::enable_if_t< !IsPrimitive<T>::value, Local<T> >
                {
-                return T(reinterpret_cast<UntaggedType<T>>(jni::GetStaticField<jobject*>(env, *clazz, field)));
+                return SeizeLocal(env, T(reinterpret_cast<UntaggedType<T>>(jni::GetStaticField<jobject*>(env, *clazz, field))));
                }
 
             template < class T >
@@ -92,9 +92,9 @@ namespace jni
 
             template < class R, class... Args >
             auto Call(JNIEnv& env, const StaticMethod<TagType, R (Args...)>& method, const Args&... args) const
-               -> std::enable_if_t< !IsPrimitive<R>::value && !std::is_void<R>::value, R >
+               -> std::enable_if_t< !IsPrimitive<R>::value && !std::is_void<R>::value, Local<R> >
                {
-                return R(reinterpret_cast<UntaggedType<R>>(CallStaticMethod<jobject*>(env, *clazz, method, Untag(args)...)));
+                return SeizeLocal(env, R(reinterpret_cast<UntaggedType<R>>(CallStaticMethod<jobject*>(env, *clazz, method, Untag(args)...))));
                }
 
             template < class... Args >
@@ -103,9 +103,9 @@ namespace jni
                 CallStaticMethod<void>(env, *clazz, method, Untag(args)...);
                }
 
-            static Class Find(JNIEnv& env)
+            static Local<Class> Find(JNIEnv& env)
                {
-                return Class(FindClass(env, TagType::Name()));
+                return SeizeLocal(env, Class(FindClass(env, TagType::Name())));
                }
 
             static const Class& Singleton(JNIEnv& env)
@@ -113,7 +113,7 @@ namespace jni
                 // The global references created here is purposefully leaked. Due to the design
                 // of Java/JNI, there is virtually no way to reliably release them. See
                 // http://bleaklow.com/2006/02/18/jni_onunload_mostly_useless.html for details.
-                static Class singleton = Find(env).NewGlobalRef(env).release();
+                static Class singleton = Find(env)->NewGlobalRef(env).release();
                 return singleton;
                }
 

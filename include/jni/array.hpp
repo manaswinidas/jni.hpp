@@ -82,9 +82,9 @@ namespace jni
                 SetArrayRegion(env, SafeDereference(env, array), start, buf);
                }
 
-            static Array<E> New(JNIEnv& env, jsize length)
+            static Local<Array<E>> New(JNIEnv& env, jsize length)
                {
-                return Array<E>(&NewArray<E>(env, length));
+                return SeizeLocal(env, Array<E>(&NewArray<E>(env, length)));
                }
 
             Global<Array<E>> NewGlobalRef(JNIEnv& env) const
@@ -142,11 +142,12 @@ namespace jni
                 return GetArrayLength(env, SafeDereference(env, array));
                }
 
-            ElementType Get(JNIEnv& env, jsize index) const
+            Local<ElementType> Get(JNIEnv& env, jsize index) const
                {
-                return ElementType(
-                    reinterpret_cast<UntaggedElementType*>(
-                        GetObjectArrayElement(env, SafeDereference(env, array), index)));
+                return SeizeLocal(env,
+                    ElementType(
+                        reinterpret_cast<UntaggedElementType*>(
+                            GetObjectArrayElement(env, SafeDereference(env, array), index))));
                }
 
             void Set(JNIEnv& env, jsize index, const ElementType& value)
@@ -154,9 +155,9 @@ namespace jni
                 SetObjectArrayElement(env, SafeDereference(env, array), index, Untag(value));
                }
 
-            static Array<Object<TheTag>> New(JNIEnv& env, jsize length, const Class<TheTag>& clazz, const Object<TheTag>& initialElement = Object<TheTag>())
+            static Local<Array<Object<TheTag>>> New(JNIEnv& env, jsize length, const Class<TheTag>& clazz, const Object<TheTag>& initialElement = Object<TheTag>())
                {
-                return Array<Object<TheTag>>(&NewObjectArray(env, length, clazz, initialElement.Get()));
+                return SeizeLocal(env, Array<Object<TheTag>>(&NewObjectArray(env, length, clazz, initialElement.Get())));
                }
 
             Global<Array<Object<TheTag>>> NewGlobalRef(JNIEnv& env) const
@@ -175,10 +176,10 @@ namespace jni
        }
 
     template < class T >
-    Array<T> MakeAnything(ThingToMake<Array<T>>, JNIEnv& env, const std::vector<T>& array)
+    Local<Array<T>> MakeAnything(ThingToMake<Array<T>>, JNIEnv& env, const std::vector<T>& array)
        {
-        Array<T> result(&NewArray<T>(env, array.size()));
-        SetArrayRegion(env, *result, 0, array);
+        Local<Array<T>> result = Array<T>::New(env, array.size());
+        SetArrayRegion(env, **result, 0, array);
         return result;
        }
 
@@ -193,10 +194,10 @@ namespace jni
        }
 
     inline
-    Array<jbyte> MakeAnything(ThingToMake<Array<jbyte>>, JNIEnv& env, const std::string& string)
+    Local<Array<jbyte>> MakeAnything(ThingToMake<Array<jbyte>>, JNIEnv& env, const std::string& string)
        {
-        Array<jbyte> result(&NewArray<jbyte>(env, string.size()));
-        SetArrayRegion(env, *result, 0, string.size(), reinterpret_cast<const jbyte*>(&string[0]));
+        Local<Array<jbyte>> result = Array<jbyte>::New(env, string.size());
+        SetArrayRegion(env, **result, 0, string.size(), reinterpret_cast<const jbyte*>(&string[0]));
         return result;
        }
    }
